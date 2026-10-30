@@ -14,7 +14,11 @@ import {
   type KeyboardTarget,
   type KeyEventLike,
 } from '../src/input-dom.js';
-import { JUMP_DURATION_TICKS, MAX_GROUP_SIZE } from '../src/tuning.js';
+import {
+  JUMP_DURATION_TICKS,
+  MAX_GROUP_SIZE,
+  START_SPEED,
+} from '../src/tuning.js';
 import type { Game, GameState, Obstacle } from '../src/types.js';
 import { collect, makeGame, pressPrimary, runUntil } from './helpers.js';
 
@@ -176,6 +180,28 @@ describe('@spec: 001-core-game @regression feature acceptance', () => {
     game.tick();
     expect(game.state().phase).toBe('running');
     expect(restarts).toHaveLength(1);
+  });
+
+  it('@regression 2.7: restart from dead resets tick and speed to the starting pace', () => {
+    const { game } = makeGame(42);
+    pressPrimary(game);
+    runUntil(game, (s) => s.phase === 'dead', 1200);
+
+    // Sanity: the run died after advancing past the starting pace, so a
+    // "fresh" restart has something non-trivial to reset.
+    const dying = game.view();
+    expect(dying.tick).toBeGreaterThan(0);
+    expect(dying.speed).toBeGreaterThanOrEqual(START_SPEED);
+
+    pressPrimary(game);
+
+    const after = game.state();
+    expect(after.phase).toBe('running');
+    expect(after.tick).toBe(0);
+    expect(after.speed).toBe(START_SPEED);
+    expect(after.score).toBe(0);
+    expect(after.scrollX).toBe(0);
+    expect(after.obstacles).toEqual([]);
   });
 
   it('@regression 2.3: every group, including groups of MAX_GROUP_SIZE, is cleared with a single well-timed jump', () => {
