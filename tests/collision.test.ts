@@ -117,4 +117,18 @@ describe('hasCollision', () => {
     };
     expect(hasCollision(dino, [smallCactus(DINO_X + 20)])).toBe(false);
   });
+
+  it('is false when sprite rects overlap but the hitboxes are disjoint (near miss, functional spec 2.5)', () => {
+    const dino = groundDino();
+    // Place the cactus so the dino's sprite still overlaps it (the head
+    // overhang reaches past the cactus's left arm tip) but the dino hitbox
+    // right edge is strictly left of the cactus hitbox left edge.
+    const dinoHitboxRight = dino.hitbox.x + dino.hitbox.width;
+    const cactusX = dinoHitboxRight - CACTUS_SMALL_HITBOX.x + 1;
+    const cactus = smallCactus(cactusX);
+
+    expect(intersects(dino, cactus)).toBe(true);
+    expect(intersects(dino.hitbox, cactus.hitbox)).toBe(false);
+    expect(hasCollision(dino, [cactus])).toBe(false);
+  });
 });
